@@ -5,37 +5,36 @@
 
 using namespace std;
 
-mutex mtx;
-condition_variable cdv;
+mutex mtx;            //объявляем мьютекс
+condition_variable cdv; // объявляем условную переменную
 
-int flag = 0;
+int flag = 0;            //объявляем флаг события
 
-void Provider() {
-    while (1) {
-        this_thread::sleep_for(chrono::milliseconds(1000));
-        unique_lock<mutex> ul(mtx);
-        if (flag == 1) {
-            cout << "Поставщик: событие не обработанно" << endl;
-            ul.unlock();
-            continue;
+void Provider() {    //функция потока-поставщика
+    while (1) {    //выполняем бесконечный цикл
+        this_thread::sleep_for(chrono::milliseconds(1000)); //поток засыпает на 1 секунду
+        unique_lock<mutex> ul(mtx);            //захватываем мьютекс
+        if (flag == 1) {                        //если флаг события установлен
+            cout << "Поставщик: событие не обработанно" << endl; // выводим сообщение об этом
+            ul.unlock();        //освобождаем мьютекс
+            continue;            //переходим к следующей итерации цикла
         }
-        flag = 1;
-        cout << "Поставщик: сообщение отправлено" << endl;
-        cdv.notify_one();
-        ul.unlock();
+        flag = 1;        //устанавливаем флаг события
+        cout << "Поставщик: сообщение отправлено" << endl;    //выводим сообщение об отправке
+        cdv.notify_one();    //сообщаем потребителю о событии
+        ul.unlock();        //освобождаем мьютекс
     }
 }
 
-void Consumer() {
-    while (1) {
-        unique_lock<mutex> ul(mtx);
-        while (flag == 0) {
-            cout << "Получатель: сообщение ожидается" << endl;
-            cdv.wait(ul);
+void Consumer() {                //функция потока-потребителя
+    while (1) {                //выполняем бесконечный цикл
+        unique_lock<mutex> ul(mtx);    //захватываем мьютекс
+        while (flag == 0) {            //пока флаг события не установлен
+            cdv.wait(ul);            //ждем сигнала от потока-поставщика
         }
-        flag = 0;
-        cout << "Получатель: сообщение получено" << endl;
-        ul.unlock();
+        flag = 0;                    //сбрасываем флаг события
+        cout << "Получатель: сообщение получено" << endl;    //выводим сообщение о получении
+        ul.unlock();                //особождаем мьютекс
     }
 }
 
@@ -44,8 +43,9 @@ int main() {
     thread prod_th(Provider); // Создаем поток-поставщик
     thread cons_th(Consumer); // Создаем поток-потребитель
 
-    prod_th.join(); // Ждем завершения потока-поставщика
-    cons_th.join(); // Ждем завершения потока-потребителя
+    //ждем завершения обоих потоков
+    prod_th.join();
+    cons_th.join(); 
 
-    return 0;
+    return 0;    //возвращаем 0
 }
