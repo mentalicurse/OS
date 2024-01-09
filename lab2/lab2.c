@@ -25,7 +25,7 @@ int createServer(int port) {
     serverSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (serverSocket == -1) {
         perror("Socket creation failed");
-        exit(EXIT_FAILURE);
+        exit(-1);
     }
 
     memset(&serverAddress, 0, sizeof(serverAddress));
@@ -35,12 +35,12 @@ int createServer(int port) {
 
     if (bind(serverSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) != 0) {
         perror("Socket bind failed");
-        exit(EXIT_FAILURE);
+        exit(-1);
     }
 
     if (listen(serverSocket, 3) != 0) {
         perror("Listen failed");
-        exit(EXIT_FAILURE);
+        exit(-1);
     }
 
     return serverSocket;
@@ -48,7 +48,7 @@ int createServer(int port) {
 
 int main() {
     int serverSocket = createServer(8080);
-    puts("Server is listening...");
+    puts("Server is listening...\n");
 
     client_t clients[3];
     int activeClients = 0;
@@ -95,7 +95,7 @@ int main() {
                 printf("Received SIGHUP signal\n");
                 wasSigHup = 0;
             } else {
-                perror("pselect failed");
+                perror("Failed pselect()");
                 return -1;
             }
         }
@@ -123,7 +123,7 @@ int main() {
                 } else {
                     close(client->connfd);
                     printf("[%s:%d]", inet_ntoa(client->addr.sin_addr), htons(client->addr.sin_port));
-                    puts(" Соединение закрыто\n");
+                    puts(" Connection closed\n");
                     clients[i] = clients[activeClients - 1];
                     activeClients--;
                     i--;
