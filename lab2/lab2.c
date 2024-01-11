@@ -52,8 +52,7 @@ int main() {
 
     client_t clients[3];
     int activeClients = 0;
-    fd_set readfds;
-    int maxFd, activity, i;
+    int maxFd, i;
     char buffer[1024] = {0};
 
     struct sigaction sa;
@@ -76,31 +75,28 @@ int main() {
             }
             puts("\n");
         }
-
-        FD_ZERO(&readfds);
-        FD_SET(serverSocket, &readfds);
+        
+        fd_set fds;
+        FD_ZERO(&fds);
+        FD_SET(serverSocket, &fds);
         maxFd = serverSocket;
 
         for (int i = 0; i < activeClients; i++) {
-            FD_SET(clients[i].connfd, &readfds);
+            FD_SET(clients[i].connfd, &fds);
             if (clients[i].connfd > maxFd) {
                 maxFd = clients[i].connfd;
             }
         }
 
-        activity = pselect(maxFd + 1, &readfds, NULL, NULL, NULL, &origMask);
 
-        if (activity == -1) {
-            if (errno == EINTR && wasSigHup) {
-                printf("Received SIGHUP signal\n");
-                wasSigHup = 0;
-            } else {
+        if (pselect(maxFd + 1, &fds, NULL, NULL, NULL, &origMask) == -1 ) {
+            if (errno != EINTR) {
                 perror("Failed pselect()");
                 return -1;
             }
         }
 
-        if (FD_ISSET(serverSocket, &readfds) && activeClients < 3) {
+        if (FD_ISSET(serverSocket, &fds) && activeClients < 3) {
             client_t *client = &clients[activeClients];
             int len = sizeof(client->addr);
             int connfd = accept(serverSocket, (struct sockaddr*)&client->addr, &len);
@@ -115,7 +111,7 @@ int main() {
 
         for (i = 0; i < activeClients; i++) {
             client_t *client = &clients[i];
-            if (FD_ISSET(client->connfd, &readfds)) {
+            if (FD_ISSET(client->connfd, &fds)) {
                 int readLen = read(client->connfd, buffer, sizeof(buffer) - 1);
                 if (readLen > 0) {
                     buffer[readLen - 1] = 0;
