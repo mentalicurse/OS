@@ -15,7 +15,7 @@ void Provider() {    //функция потока-поставщика
         this_thread::sleep_for(chrono::milliseconds(1000)); 
         unique_lock<mutex> ul(mtx);            
         if (flag == 1) {                        
-            cout << "Поставщик: событие не обработанно" << endl; 
+            cout << "Поставщик: сообщение не обработанно" << endl; 
             ul.unlock();        
             continue;            
         }
