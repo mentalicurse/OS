@@ -8,7 +8,7 @@ using namespace std;
 mutex mtx;            //объявляем мьютекс
 condition_variable cdv; // объявляем условную переменную
 
-int flag = 0;            //объявляем флаг события
+int flag = 0;            //объявляем флаг готовности
 
 void Provider() {    //функция потока-поставщика
     while (1) {    
